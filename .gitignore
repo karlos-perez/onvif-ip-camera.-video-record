@@ -1,0 +1,7 @@
+.idea
+.idea/*
+*.pyc
+*.mkv
+*.h264
+*.mp4
+*.log
