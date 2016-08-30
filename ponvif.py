@@ -18,7 +18,7 @@ from bs4 import BeautifulSoup
 
 class OnvifCam:
     def __init__(self):
-        pass
+        self.stop = False
 
     def setup(self, ipaddr, ipport, user, psw):
         self.ip = ipaddr
@@ -162,21 +162,6 @@ class OnvifCam:
             pr[prof.text] = p.attrs['token']
             result.append(pr)
         return result
-        # print(resp.prettify())
-        # print(resp.find_all())
-        # print(resp.find_all('tt:name'))
-
-        # result = {}
-        # self.recurs(resp.find('trt:getprofilesresponse'), 0, result)
-        # return result
-        # a = resp.find('trt:getprofilesresponse')
-        # for i in a.contents:
-        #     print(i.name, i.attrs)
-        #     for j in i.contents:
-        #         if j.attrs:
-        #             print(j.name, j.attrs)
-        #         else:
-        #             print(j.name, '--------------')
 
     def _createHeadPullMessages(self, urlact, urlto):
         action =  '<a:Action s:mustUnderstand="1">{}</a:Action>'.format(urlact)
@@ -215,7 +200,8 @@ class OnvifCam:
 
 
         # TODO: !!!!!!
-        for i in range(100):
+        while True:
+        # for i in range(100):
             a = self._sendPullMessages(addr)
             # print(a.prettify())
             # print('-----------')
@@ -223,30 +209,30 @@ class OnvifCam:
             aa = a.find('tt:data')
             aaa = aa.findChild().attrs
             motion = aaa['value']
-            print('{}.  {} - {}'.format(i, tt, motion))
-            time.sleep(1)
-        return '!!!!!!!!!!!!!!'
+            # print('{}.  {} - {}'.format(i, tt, motion))
+            yield self._convertStrToBool(motion)
+            time.sleep(0.5)
 
 
-if __name__ == "__main__":
-    ipaddr = "172.16.0.7"
-    port = "8899"
-    cam=OnvifCam()
-    cam.setup(ipaddr, port, 'admin', '')
-    print(cam.getDeviceInformation())
-    print('==='*30)
-    print(cam.getCapabilities())
-    print('==='*30)
-    print(cam.getSystemDateAndTime())
-    print('==='*30)
-    print(cam.getServiceCapabilities())
-    print('==='*30)
-    print(cam.getProfiles())
-    print('==='*30)
-    print(cam.getVideoSources())
-    print('==='*30)
-    print(cam.getStreamUri())
-    print('==='*30)
-    print(cam.createPullPointSubscription())
+# if __name__ == "__main__":
+#     ipaddr = "172.16.0.7"
+#     port = "8899"
+#     cam=OnvifCam()
+#     cam.setup(ipaddr, port, 'admin', '')
+#     print(cam.getDeviceInformation())
+#     print('==='*30)
+#     print(cam.getCapabilities())
+#     print('==='*30)
+#     print(cam.getSystemDateAndTime())
+#     print('==='*30)
+#     print(cam.getServiceCapabilities())
+#     print('==='*30)
+#     print(cam.getProfiles())
+#     print('==='*30)
+#     print(cam.getVideoSources())
+#     print('==='*30)
+#     print(cam.getStreamUri())
+#     print('==='*30)
+#     print(cam.createPullPointSubscription())
 
 
