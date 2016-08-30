@@ -16,7 +16,8 @@ class RecordRTSP:
     '''
     def __init__(self, config):
         self.rtsp_url = config['rtsp_url']
-        self.ip_cam_adress, self.ip_cam_port = self._get_ip_port(self.rtsp_url)
+        self.ip_cam_adress, port  = self._get_ip_port(self.rtsp_url)
+        self.ip_cam_port = int(port)
         if config.get('client_ports'):
             self.client_ports = config['client_ports']
         else:
@@ -57,7 +58,7 @@ class RecordRTSP:
         :return: [ip, port]
         '''
         ipp = url.split('/')
-        return ipp.split(':')
+        return ipp[2].split(':')
 
     def _id_session(self, response):
         '''

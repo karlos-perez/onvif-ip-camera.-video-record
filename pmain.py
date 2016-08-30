@@ -31,9 +31,9 @@ if __name__ == "__main__":
 
     config = {
         'rtsp_url': "rtsp://172.16.0.7:554/user=admin&password=&channel=1&stream=0.sdp",
-        'client_ports':[60784, 60785],
-        'ip_adress':ipaddr,
-        'ip_port':554,
+        # 'client_ports':[60784, 60785],
+        # 'ip_adress':ipaddr,
+        # 'ip_port':554,
         'log_file':'rtsp_record.log',
         'log_level':logging.WARNING,
     }
