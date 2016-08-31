@@ -4,6 +4,7 @@ import bitstring
 import logging
 import re
 import socket
+import sys
 import time
 
 from collections import deque
@@ -22,16 +23,6 @@ class RecordRTSP:
             self.client_ports = config['client_ports']
         else:
             self.client_ports = [60784, 60785]
-        if config.get('log_file'):
-            log_file = config['log_file']
-        else:
-            log_file = 'record_rtsp.log'
-        if config.get('log_level'):
-            log_level = config['log_level']
-        else:
-            log_level = logging.WARNING
-        log_format = '[%(asctime)s] %(levelname)-8s: %(message)s'
-        logging.basicConfig(level=log_level, format=log_format, filename=log_file)
         m_describe = ("DESCRIBE {url} RTSP/1.0\r\n"
                       "CSeq: 2\r\n"
                       "User-Agent: python\r\n"
@@ -229,6 +220,7 @@ class RecordRTSP:
                     chunk.clear()
             chunk.append(st['data'])
 
+    # TODO: rotation by file size
     def _record_online(self, filename, stop, durations=None):
         '''
         Online record h264 video stream.
@@ -249,6 +241,7 @@ class RecordRTSP:
                     if time.time() - begin_rec > durations:
                         break
 
+    # TODO: rotation by file size
     def _record_with_pre_buffer(self, size_buffer, start, stop):
         '''
         Record video stream h264 with pre-record buffer.
@@ -364,8 +357,12 @@ class RecordRTSP:
             file_name = filename
         else:
             file_name = self._filename()
-        self._record_online(file_name, stp, durations)
-        self._finish()
+        try:
+            self._record_online(file_name, stop_event, durations)
+        except:
+            logging.error("_record_online() - ERROR: {}".format(sys.exc_info()[0]))
+        finally:
+            self._finish()
 
     def run_record_with_prebuffer(self, size_buffer, start, stop):
         '''
@@ -378,6 +375,10 @@ class RecordRTSP:
         self._start()
         strt = start
         stp = stop
-        self._record_with_pre_buffer(size_buffer, strt, stp)
-        self._finish()
+        try:
+            self._record_with_pre_buffer(size_buffer, strt, stp)
+        except:
+            logging.error("_record_with_pre_buffer() - Exception: {}".format(sys.exc_info()[0]))
+        finally:
+            self._finish()
 

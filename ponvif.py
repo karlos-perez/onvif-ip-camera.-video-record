@@ -4,8 +4,7 @@ import datetime
 from hashlib import sha1
 import uuid
 import logging
-log = logging.getLogger(__name__)
-D = log.debug
+
 
 from random import SystemRandom
 import string
