@@ -61,7 +61,7 @@ def main():
     stop_time_record = None
     min_duration = rec_before_motion + rec_after_motion
     try:
-        for i in cam.createPullPointSubscription():
+        for i in cam.run_detect_motion():
             if i:
                 motion = True
                 log_motion.info('Motion True')

@@ -2,6 +2,7 @@
 
 import datetime
 from hashlib import sha1
+import sys
 import uuid
 import logging
 
@@ -177,18 +178,26 @@ class OnvifCam:
             return True
 
     def _sendPullMessages(self, url):
+        urlAction = 'http://www.onvif.org/ver10/events/wsdl/PullPointSubscription/PullMessagesRequest'
+        head = self._createHeadPullMessages(urlAction, url)
         self.timeout = 'PT1M'
         self.msglimit = 1024
         tmout = '<Timeout>{}</Timeout>'.format(self.timeout)
         messagelimit = '<MessageLimit>{}</MessageLimit>'.format(self.msglimit)
         msg = '<PullMessages xmlns="http://www.onvif.org/ver10/events/wsdl">{}{}</PullMessages>'.format(tmout, messagelimit)
-        urlAction = 'http://www.onvif.org/ver10/events/wsdl/PullPointSubscription/PullMessagesRequest'
-        head = self._createHeadPullMessages(urlAction, url)
         a = self._createSOAPmsg(msg, head)
         resp = self._sendRequest(url, a)
         return resp
 
-    def createPullPointSubscription(self):
+    def _sendUnsubscribe(self, url):
+        urlAction = 'http://docs.oasis-open.org/wsn/bw-2/SubscriptionManager/UnsubscribeRequest'
+        head = self._createHeadPullMessages(urlAction, url)
+        msg = '<Unsubscribe xmlns="http://docs.oasis-open.org/wsn/b-2"/>'
+        a = self._createSOAPmsg(msg, head)
+        self._sendRequest(url, a)
+
+
+    def _createPullPointSubscription(self):
         url = 'http://{}:{}/onvif/Events'.format(self.ip, self.port)
         urlAction = 'http://www.onvif.org/ver10/events/wsdl/EventPortType/CreatePullPointSubscriptionRequest'
         bmsg = '<CreatePullPointSubscription xmlns="http://www.onvif.org/ver10/events/wsdl"><InitialTerminationTime>PT600S</InitialTerminationTime></CreatePullPointSubscription>'
@@ -196,21 +205,23 @@ class OnvifCam:
         msg = self._createSOAPmsg(bmsg, h)
         resp = self._sendRequest(url, msg)
         addr = resp.find('tev:subscriptionreference').findChild('wsa5:address').text
+        return addr
 
+    def run_detect_motion(self):
+        url =  self._createPullPointSubscription()
+        stop = False
+        try:
+            while not stop:
+                resp = self._sendPullMessages(url)
+                data = resp.find('tt:data')
+                motion = (data.findChild().attrs)['value']
+                stop = yield self._convertStrToBool(motion)
+                time.sleep(0.5)
+        except:
+            logging.error("run_detect_motion - Exception: {}".format(sys.exc_info()[0]))
+        finally:
+            self._sendUnsubscribe(url)
 
-        # TODO: !!!!!!
-        while True:
-        # for i in range(100):
-            a = self._sendPullMessages(addr)
-            # print(a.prettify())
-            # print('-----------')
-            tt = a.find('tev:currenttime').text
-            aa = a.find('tt:data')
-            aaa = aa.findChild().attrs
-            motion = aaa['value']
-            # print('{}.  {} - {}'.format(i, tt, motion))
-            yield self._convertStrToBool(motion)
-            time.sleep(0.5)
 
 
 # if __name__ == "__main__":
@@ -232,6 +243,19 @@ class OnvifCam:
 #     print('==='*30)
 #     print(cam.getStreamUri())
 #     print('==='*30)
-#     print(cam.createPullPointSubscription())
+#     # print(cam.createPullPointSubscription())
+#     count = 0
+#     g = cam.run_detect_motion()
+#     try:
+#         for i in g:
+#             if count > 10:
+#                 g.send(True)
+#             print(count, i)
+#             # time.sleep(1)
+#             count += 1
+#     except StopIteration:
+#         pass
+#     print('end iteration')
+
 
 
