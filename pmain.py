@@ -46,7 +46,7 @@ def main():
     cam.setup(ip_adress, onvif_port, user, password)
 
     config = {
-        'rtsp_url': cam.getStreamUri(),
+        'rtsp_url': cam.get_stream_uri(),
     }
 
     stop_record = Event()
