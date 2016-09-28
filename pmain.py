@@ -21,7 +21,7 @@ logging.basicConfig(level=log_level, format=log_format, filename=log_file, filem
 ##  Detect motion logging
 log_motion = logging.getLogger('detect motion')
 log_motion.setLevel(logging.INFO)
-formatter=logging.Formatter('%(asctime)s   %(levelname)s','%Y-%m-%d %H:%M:%S')
+formatter=logging.Formatter('%(asctime)s', '%Y-%m-%d %H:%M:%S')
 handler=logging.FileHandler('detect_motion.log', 'a')
 handler.setFormatter(formatter)
 # handler.setLevel(logging.INFO)

@@ -11,13 +11,13 @@ from collections import deque
 
 
 class RecordRTSP:
-    '''
-        Recording ip video camera.
+    """
+        Recording video from IP-camera.
         Video file format: 20160101-121134-0.h264
-    '''
+    """
     def __init__(self, config):
         self.rtsp_url = config['rtsp_url']
-        self.ip_cam_adress, port  = self._get_ip_port(self.rtsp_url)
+        self.ip_cam_adress, port = self._get_ip_port(self.rtsp_url)
         self.ip_cam_port = int(port)
         if config.get('client_ports'):
             self.client_ports = config['client_ports']
@@ -28,43 +28,43 @@ class RecordRTSP:
                       "User-Agent: python\r\n"
                       "Accept: application/sdp\r\n\r\n").format(url=self.rtsp_url)
         m_setup = ("SETUP {url} RTSP/1.0\r\n"
-                  "CSeq: 3\r\n"
-                  "User-Agent: python\r\n"
-                  "Transport: RTP/AVP;unicast;client_port={port1}-{port2}\r\n"
-                  "\r\n").format(url=self.rtsp_url, port1=self.client_ports[0], port2=self.client_ports[1])
+                   "CSeq: 3\r\n"
+                   "User-Agent: python\r\n"
+                   "Transport: RTP/AVP;unicast;client_port={port1}-{port2}\r\n"
+                   "\r\n").format(url=self.rtsp_url, port1=self.client_ports[0], port2=self.client_ports[1])
         self.m_play = ("PLAY {url} RTSP/1.0\r\n"
-                  "CSeq: 5\r\n"
-                  "User-Agent: python\r\n"
-                  "Session: {id}\r\n"
-                  "Range: npt=0.000-\r\n\r\n")
+                       "CSeq: 5\r\n"
+                       "User-Agent: python\r\n"
+                       "Session: {id}\r\n"
+                       "Range: npt=0.000-\r\n\r\n")
         self.m_close = ("TEARDOWN {url} RTSP/1.0\r\nCSeq: 8\r\nSession: {id}\r\n\r\n")
         self.msg_describe = m_describe.encode()
         self.msg_setup = m_setup.encode()
         self.format_file = '{}{}.h264'
 
     def _get_ip_port(self, url):
-        '''
+        """
         Get IP adress and port camera from URL.
         :param url: rtsp url
         :return: [ip, port]
-        '''
+        """
         ipp = url.split('/')
         return ipp[2].split(':')
 
     def _id_session(self, response):
-        '''
+        """
         Search session id from rtsp strings
         :param response: Response from the camera
         :return: ID session
-        '''
+        """
         resp = response.split('\r\n')
         for r in resp:
             ss = r.split()
             if ss[0].strip() == "Session:":
                 return int(ss[1].split(";")[0].strip())
 
-    def _RTP_handler_h264(self, st):
-        '''
+    def _rtp_handler_h264(self, st):
+        """
         This routine takes a UDP packet, i.e. a string of bytes and ..
             1) strips off the RTP header
             2) adds NAL "stamps" to the packets, so that they are recognized as NAL's
@@ -73,9 +73,6 @@ class RecordRTSP:
                 by stock media players as h264 stream
         :param st: RTP packet
         :return: packet h264 stream
-        '''
-        """
-
         """
         startbytes = b'\x00\x00\x00\x01'  # This is the sequence of four bytes that identifies a NAL packet
         result = {}
@@ -150,7 +147,7 @@ class RecordRTSP:
                 nlu = nlu0 + nlu1  # Create "[3 NAL UNIT BITS | 5 NAL UNIT BITS]"
                 head = startbytes + nlu.bytes  # Add the NAL starting sequence
                 lc += 1
-            elif start == False and end == False:  # Intermediate fragment in a sequence, just dump "VIDEO FRAGMENT DATA"
+            elif start is False and end is False:  # Intermediate fragment in a sequence, just dump "VIDEO FRAGMENT DATA"
                 lc += 1  # Skip the "Second byte"
             elif end:  # Last fragment in a sequence, just dump "VIDEO FRAGMENT DATA"
                 logging.debug(">>> last fragment found")
@@ -160,25 +157,24 @@ class RecordRTSP:
             return result
         else:
             logging.error("Unknown frame type ({}) for this fragment".format(typ))
-            raise(Exception, "unknown frame type for this piece of s***")
 
     def _log_record(self, response):
-        '''
+        """
         Pretty-printing rtsp response in log
         :param response: Response from the camera
         :return: None
-        '''
+        """
         resp = response.split('\r\n')
         for r in resp:
             logging.info(r)
 
     def _get_ports(self, search_str, response):
-        '''
+        """
         Searching port numbers from rtsp strings
         :param search_str: Search string
         :param response: Response from the camera
         :return: Ports
-        '''
+        """
         pat = re.compile(search_str+"=\d*-\d*")
         pat2 = re.compile('\d+')
         mstring = pat.findall(response)[0]
@@ -189,11 +185,11 @@ class RecordRTSP:
         return numas
 
     def _filename(self, idr=''):
-        '''
+        """
         Creating a record file name
         :param idr: The serial number of the record for integrity monitoring
         :return: File name in format YYYYYMMDD-HHMMSS-ID.h264
-        '''
+        """
         if idr:
             id_rec = '-{}'.format(idr)
         else:
@@ -201,34 +197,34 @@ class RecordRTSP:
         return self.format_file.format(time.strftime("%Y%m%d-%H%M%S"), id_rec)
 
     def _get_frame(self):
-        '''
+        """
         Read a UDP packets and creating of list packages of stream 264
         Return chunk video between SPS packages.
         Video chunk approximately 2 seconds duration
         :return: [SPS, PPS, Unknow type, FU-A, FU-A, ...,  FU-A]
-        '''
-        SPS_count = 0
+        """
+        sps_count = 0
         chunk = []
         while True:
             resp = self.udp_socket.recv(4096)
-            st = self._RTP_handler_h264(resp)
+            st = self._rtp_handler_h264(resp)
             if st['typ'] == 'SPS':
-                SPS_count += 1
-                if SPS_count == 2:
-                    SPS_count -= 1
+                sps_count += 1
+                if sps_count == 2:
+                    sps_count -= 1
                     yield chunk
                     chunk.clear()
             chunk.append(st['data'])
 
     # TODO: rotation by file size
     def _record_online(self, filename, stop, durations=None):
-        '''
+        """
         Online record h264 video stream.
         :param filename: str(file name)
         :param stop: multiprocessing.Event() - for stoping video
         :param durations: Durations record
         :return: None
-        '''
+        """
         chunks = self._get_frame()
         with open(filename, 'wb') as h264:
             begin_rec = time.time()
@@ -243,7 +239,7 @@ class RecordRTSP:
 
     # TODO: rotation by file size
     def _record_with_pre_buffer(self, size_buffer, start, stop):
-        '''
+        """
         Record video stream h264 with pre-record buffer.
         Ring buffer size of 'size_buffer' is constant cyclic flow record.
         Designed to record video to trigger motion detection.
@@ -251,7 +247,7 @@ class RecordRTSP:
         :param start: multiprocessing.Event() -  start records
         :param stop: multiprocessing.Event() - stop records
         :return: None
-        '''
+        """
         buffer = deque(maxlen=int(size_buffer/2))
         chunks = self._get_frame()
         record = False
@@ -268,7 +264,7 @@ class RecordRTSP:
                 for f in e:
                     h264.write(f)
             if not start.is_set() and record:
-                record =False
+                record = False
                 id_record += 1
                 h264.close()
                 if stop.is_set():
@@ -280,21 +276,21 @@ class RecordRTSP:
                     start.clear()
 
     def _make_send_msg(self, ids, msg):
-        '''
+        """
         Create RTSP message
         :param ids: ID session
         :param msg: message
         :return: RTSP message for send IP camera
-        '''
+        """
         result = msg.format(url=self.rtsp_url, id=ids)
         return result.encode()
 
-    def _make_UDP_socket(self, ports):
-        '''
+    def _make_udp_socket(self, ports):
+        """
         Create UDP socket for receipt RTP packets
         :param ports: Client port
         :return: Socket
-        '''
+        """
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         for p in ports:
             try:
@@ -306,19 +302,19 @@ class RecordRTSP:
         return sock
 
     def _make_control_socket(self):
-        '''
+        """
         Create TCP socket for control RTSP stream
         :return: Socket
-        '''
+        """
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((self.ip_cam_adress, self.ip_cam_port))
         return sock
 
     def _start(self):
-        '''
+        """
         Start and log control RTSP stream
         :return:
-        '''
+        """
         self.ctrl_socket = self._make_control_socket()
         self.ctrl_socket.send(self.msg_describe)
         self._log_record(self.ctrl_socket.recv(4096).decode())
@@ -329,28 +325,28 @@ class RecordRTSP:
         self.msg_play = self._make_send_msg(id_session, self.m_play)  # Make PLAY message
         self.msg_close = self._make_send_msg(id_session, self.m_close)  # Make CLOSE message
         clientports = self._get_ports("client_port", resp)
-        self.udp_socket = self._make_UDP_socket(clientports)
+        self.udp_socket = self._make_udp_socket(clientports)
         self.ctrl_socket.send(self.msg_play)
         self._log_record(self.ctrl_socket.recv(4096).decode())
 
     def _finish(self):
-        '''
+        """
         Close connection
         :return:
-        '''
+        """
         self.ctrl_socket.send(self.msg_close)
         self._log_record(self.ctrl_socket.recv(4096).decode())
         self.ctrl_socket.close()
         self.udp_socket.close()
 
     def run_record_online(self, stop, durations=None, filename=None):
-        '''
+        """
         Run recording online video
         :param stop: multiprocessing.Event() - stop online record
         :param durations: Duration record in seconds
         :param filename:
         :return:
-        '''
+        """
         stop_event = stop
         self._start()
         if filename:
@@ -365,13 +361,13 @@ class RecordRTSP:
             self._finish()
 
     def run_record_with_prebuffer(self, size_buffer, start, stop):
-        '''
+        """
         Run record video with pre-recording
         :param size_buffer: Duration pre-recording in second
         :param start: multiprocessing.Event() - start online record
         :param stop: multiprocessing.Event() - stop online record
         :return:
-        '''
+        """
         self._start()
         strt = start
         stp = stop
@@ -381,4 +377,3 @@ class RecordRTSP:
             logging.error("_record_with_pre_buffer() - Exception: {}".format(sys.exc_info()[0]))
         finally:
             self._finish()
-
