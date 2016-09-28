@@ -373,6 +373,8 @@ class RecordRTSP:
         stp = stop
         try:
             self._record_with_pre_buffer(size_buffer, strt, stp)
+        except KeyboardInterrupt:
+            pass
         except:
             logging.error("_record_with_pre_buffer() - Exception: {}".format(sys.exc_info()[0]))
         finally:

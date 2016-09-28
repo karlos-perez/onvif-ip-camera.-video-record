@@ -40,6 +40,7 @@ rec_before_motion = 15
 rec_after_motion = 15
 ## Folder for video recording
 dir_record = ''
+dir_snapshots = './snapshots/'
 
 def main():
     cam=OnvifCam()
@@ -65,6 +66,7 @@ def main():
             if i:
                 motion = True
                 log_motion.info('Motion True')
+                cam.save_snapshot(dir_snapshots)
             else:
                 motion = False
             if motion and not rec:

@@ -2,6 +2,7 @@
 
 import datetime
 import logging
+import os
 import requests
 import sys
 import time
@@ -38,6 +39,7 @@ class OnvifCam:
         self.profilename = list(self.profiles[0].keys())[0]
         self.profiletoken = self.profiles[0][self.profilename]
         self.profile_settings = self.get_profile_settings(self.profiletoken)
+        self.snapshot_uri = self.get_snapshot_uri()
 
     def _create_soap_msg(self, msg, header=''):
         envelope = '<?xml version="1.0" encoding="UTF-8"?>' \
@@ -54,6 +56,7 @@ class OnvifCam:
 
     def _send_request(self, url, msg):
         headers = {'Content-Type': 'application/soap+xml; charset=utf-8'}
+        # TODO: try: request except:
         response = requests.post(url, msg, headers=headers)
         # TODO: change return {'error': False, 'response': BeautifulSoup(response.content, 'lxml')}
         if response.status_code == 200:
@@ -260,6 +263,8 @@ class OnvifCam:
                 motion = (data.findChild().attrs)['value']
                 stop = yield self._convert_str_to_bool(motion)
                 time.sleep(0.5)
+        except KeyboardInterrupt:
+            pass
         except:
             logging.error("run_detect_motion - Exception: {}".format(sys.exc_info()[0]))
         finally:
@@ -278,3 +283,37 @@ class OnvifCam:
         resp = self._send_request(url, self._create_soap_msg(msg))
         snapshot_url = resp.find('tt:uri').text
         return snapshot_url
+
+    def get_snapshot(self, uri):
+        try:
+            response = requests.get(uri)
+        except requests.ConnectionError():
+            logging.error("Connection error: ", uri)
+            return None
+        return response
+
+    def save_snapshot(self, path=''):
+        filename = '{}.jpg'.format(time.strftime("%Y%m%d-%H%M%S"))
+        if path:
+            abs_path = os.path.abspath(path)
+            if not os.path.exists(path):
+                try:
+                    os.mkdir(abs_path)
+                except:
+                    logging.error("Fail make dir: ", abs_path)
+                    abs_path = os.getcwd()
+        else:
+            abs_path = os.getcwd()
+        file = os.path.join(abs_path, filename)
+        response = self.get_snapshot(self.snapshot_uri)
+        if not response:
+            return
+        elif response.status_code != 200:
+            logging.error("Get snapshot request.status_code: ", response.status_code)
+            self.snapshot_uri = self.get_snapshot_uri()
+            response = self.get_snapshot(self.snapshot_uri)
+            if not response or response.status_code != 200:
+                logging.error("Get snapshot again request.status_code: ", response.status_code)
+                return
+        with open(file, 'wb') as fl:
+            fl.write(response.content)
