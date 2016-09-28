@@ -264,3 +264,17 @@ class OnvifCam:
             logging.error("run_detect_motion - Exception: {}".format(sys.exc_info()[0]))
         finally:
             self._send_unsubscribe(url)
+
+    def get_snapshot_uri(self):
+        """
+        GetSnapshotUri - command to obtain a JPEG snapshot from the device
+        :return: url to be getting snapshot
+        """
+        service = 'media'
+        url = self.capabilities[service]
+        profiletoken = '<ProfileToken>{}</ProfileToken>'.format(self.profiletoken)
+        msg = '<GetSnapshotUri xmlns="http://www.onvif.org/ver10/media/wsdl">' \
+              '{}</GetSnapshotUri>'.format(profiletoken)
+        resp = self._send_request(url, self._create_soap_msg(msg))
+        snapshot_url = resp.find('tt:uri').text
+        return snapshot_url
