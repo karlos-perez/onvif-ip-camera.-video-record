@@ -325,10 +325,13 @@ class OnvifCam:
         profiletoken = '<ConfigurationToken>{}</ConfigurationToken>'.format(token)
         msg = '<GetRules xmlns="http://www.onvif.org/ver20/analytics/wsdl">{}</GetRules>'.format(profiletoken)
         resp = self._send_request(url, self._create_soap_msg(msg))
-        rule_name = resp.find('tan:rule').attrs['name']
-        result = {'rule_name': rule_name}
-        aa = resp.find_all('tt:simpleitem')
-        for i in aa:
-            param = i.attrs
-            result.update({param['name']: param['value']})
+        rule = resp.find('tan:rule').attrs
+        result = {'rule_name': rule['name'], 'rule_type': rule['type']}
+        items = resp.find_all('tt:simpleitem')
+        params = {}
+        for i in items:
+            p = i.attrs
+            params.update({p['name']:p['value']})
+        result['parameters'] = params
         return result
+
