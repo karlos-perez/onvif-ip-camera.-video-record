@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 import logging
 import sys
 import time
@@ -8,6 +9,7 @@ from multiprocessing import Process, Event
 
 from prtsp import RecordRTSP
 from ponvif import OnvifCam
+from pgoogledrive import GoogleDrive
 
 
 # INITIAL SETTINGS:
@@ -43,16 +45,17 @@ dir_record = ''
 dir_snapshots = './snapshots/'
 
 def main():
+    with open('config', 'r') as config_file:
+        config = json.loads(config_file.read())
     cam=OnvifCam()
     cam.setup(ip_adress, onvif_port, user, password)
 
-    config = {
-        'rtsp_url': cam.get_stream_uri(),
-    }
+    config.update({'rtsp_url': cam.get_stream_uri()})
 
     stop_record = Event()
     start_record = Event()
 
+    drive = GoogleDrive(config)
     record = RecordRTSP(config)
     proc = Process(target=record.run_record_with_prebuffer, args=(rec_before_motion, start_record, stop_record))
     proc.daemon = True
@@ -66,7 +69,9 @@ def main():
             if i:
                 motion = True
                 log_motion.info('Motion True')
-                cam.save_snapshot(dir_snapshots)
+                snapshot = cam.save_snapshot(dir_snapshots)
+                if snapshot:
+                    drive.upload(snapshot)
             else:
                 motion = False
             if motion and not rec:

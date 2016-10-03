@@ -307,13 +307,14 @@ class OnvifCam:
         file = os.path.join(abs_path, filename)
         response = self.get_snapshot(self.snapshot_uri)
         if not response:
-            return
+            return None
         elif response.status_code != 200:
             logging.error("Get snapshot request.status_code: ", response.status_code)
             self.snapshot_uri = self.get_snapshot_uri()
             response = self.get_snapshot(self.snapshot_uri)
             if not response or response.status_code != 200:
                 logging.error("Get snapshot again request.status_code: ", response.status_code)
-                return
+                return None
         with open(file, 'wb') as fl:
             fl.write(response.content)
+        return file
