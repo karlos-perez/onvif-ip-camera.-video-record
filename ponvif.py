@@ -318,3 +318,17 @@ class OnvifCam:
         with open(file, 'wb') as fl:
             fl.write(response.content)
         return file
+
+    def get_rules(self, token):
+        service = 'analytics'
+        url = self.capabilities[service]
+        profiletoken = '<ConfigurationToken>{}</ConfigurationToken>'.format(token)
+        msg = '<GetRules xmlns="http://www.onvif.org/ver20/analytics/wsdl">{}</GetRules>'.format(profiletoken)
+        resp = self._send_request(url, self._create_soap_msg(msg))
+        rule_name = resp.find('tan:rule').attrs['name']
+        result = {'rule_name': rule_name}
+        aa = resp.find_all('tt:simpleitem')
+        for i in aa:
+            param = i.attrs
+            result.update({param['name']: param['value']})
+        return result
