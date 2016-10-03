@@ -25,7 +25,7 @@ class GoogleDrive:
         self.client_secret_file = config.get('client_secret_file')
         self.folder_id = config.get('folder_id')
         self.service = self._google_drive_servise()
-        self.current_folder = datetime.now().strftime('%Y%m%d_%H%M')
+        self.current_folder = datetime.now().strftime('%Y%m%d')
 
     def _google_drive_servise(self):
         """
@@ -62,8 +62,9 @@ class GoogleDrive:
         if mimetype_file is None:
             mimetype_file = 'application/octet-stream'
         media_body = MediaFileUpload(upload_file, mimetype=mimetype_file, resumable=True)
+        name = os.path.split(upload_file)[1]
         body = {
-            'name': upload_file,
+            'name': name,
             'parents': [folder,],
           }
         try:
