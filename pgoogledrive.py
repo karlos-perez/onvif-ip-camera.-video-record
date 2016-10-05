@@ -106,6 +106,8 @@ class GoogleDrive:
         :return: ID folder
         """
         date = datetime.now().strftime('%Y%m%d')
+        if date != self.current_folder:
+            self.current_folder = date
         folders = self.get_all_folders()
         if self.current_folder in list(folders.keys()):
             result = folders[self.current_folder]
