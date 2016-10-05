@@ -63,6 +63,7 @@ class OnvifCam:
             return  BeautifulSoup(response.content, 'lxml')
         elif response.status_code == 400:
             resp = BeautifulSoup(response.content, 'lxml')
+            print(resp.prettify())
             raise Exception(resp.find('soap-env:text').text)
         else:
             print(response.content.decode())
@@ -106,7 +107,8 @@ class OnvifCam:
         service = 'media'
         url = self.capabilities[service]
         profiletoken = '<ProfileToken>{}</ProfileToken>'.format(token)
-        msg = '<GetProfile xmlns="http://www.onvif.org/ver10/media/wsdl">{}</GetProfile>'.format(profiletoken)
+        msg = '<GetProfile xmlns="http://www.onvif.org/ver10/media/wsdl">' \
+              '{}</GetProfile>'.format(profiletoken)
         resp = self._send_request(url, self._create_soap_msg(msg))
         return resp
 
@@ -323,7 +325,8 @@ class OnvifCam:
         service = 'analytics'
         url = self.capabilities[service]
         profiletoken = '<ConfigurationToken>{}</ConfigurationToken>'.format(token)
-        msg = '<GetRules xmlns="http://www.onvif.org/ver20/analytics/wsdl">{}</GetRules>'.format(profiletoken)
+        msg = '<GetRules xmlns="http://www.onvif.org/ver20/analytics/wsdl">' \
+              '{}</GetRules>'.format(profiletoken)
         resp = self._send_request(url, self._create_soap_msg(msg))
         rule = resp.find('tan:rule').attrs
         result = {'rule_name': rule['name'], 'rule_type': rule['type']}
@@ -335,3 +338,34 @@ class OnvifCam:
         result['parameters'] = params
         return result
 
+    def modify_rules(self, token, param):
+        rule_name = param.get('rule_name')
+        rule_type = param.get('rule_type')
+        params = param.get('parameters')
+        service = 'analytics'
+        url = self.capabilities[service]
+        profiletoken = '<ConfigurationToken>{}</ConfigurationToken>'.format(token)
+        items = []
+        for i in params.keys():
+            item = '<SimpleItem Name="{n}" Value="{v}"></SimpleItem>'.format(n=i,
+                                                                             v=params[i])
+            items.append(item)
+        simpleitems = ''.join(items)
+        parameters = '<Parameters>{}</Parameters>'.format(simpleitems)
+        rule = '<Rule Name="{n}" Type="{t}">' \
+               '{p}</Rule>'.format(n=rule_name, t=rule_type, p=parameters)
+        msg = '<ModifyRules xmlns="http://www.onvif.org/ver20/analytics/wsdl">' \
+              '{p}{r}</ModifyRules>'.format(p=profiletoken, r=rule)
+        # print(msg)
+        resp = self._send_request(url, self._create_soap_msg(msg))
+        return resp.prettify()
+
+    def get_analytics_modules(self):
+        service = 'analytics'
+        url = self.capabilities[service]
+        # TODO: change profile token
+        profiletoken = '<ConfigurationToken>{}</ConfigurationToken>'.format(self.profiletoken)
+        msg = '<GetAnalyticsModules xmlns="http://www.onvif.org/ver20/analytics/wsdl">' \
+              '{}</GetAnalyticsModules>'.format(profiletoken)
+        resp = self._send_request(url, self._create_soap_msg(msg))
+        return resp.prettify()
