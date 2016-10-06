@@ -2,6 +2,7 @@
 
 import bitstring
 import logging
+import os
 import re
 import socket
 import sys
@@ -16,7 +17,31 @@ class RecordRTSP:
         Video file format: 20160101-121134-0.h264
     """
     def __init__(self, config):
-        self.rtsp_url = config['rtsp_url']
+        try:
+            self.rtsp_url = config['rtsp_url']
+        except:
+            logging.error("No stream url")
+            raise
+        buffer = config.get('rec_before_motion')
+        if not buffer:
+            self.record_buffer = 0
+        else:
+            self.record_buffer = int(buffer)
+        if config['dir_record']:
+            self.record_path = os.path.abspath(config['dir_record'])
+            if not os.path.exists(self.record_path):
+                try:
+                    os.mkdir(self.record_path)
+                except:
+                    logging.error("Fail make dir: ", self.record_path)
+                    self.record_path = os.getcwd()
+        else:
+            self.record_path = os.getcwd()
+
+
+
+
+
         self.ip_cam_adress, port = self._get_ip_port(self.rtsp_url)
         self.ip_cam_port = int(port)
         if config.get('client_ports'):
@@ -194,7 +219,8 @@ class RecordRTSP:
             id_rec = '-{}'.format(idr)
         else:
             id_rec = ''
-        return self.format_file.format(time.strftime("%Y%m%d-%H%M%S"), id_rec)
+        filename = self.format_file.format(time.strftime("%Y%m%d-%H%M%S"), id_rec)
+        return os.path.join(self.record_path, filename)
 
     def _get_frame(self):
         """
@@ -360,7 +386,7 @@ class RecordRTSP:
         finally:
             self._finish()
 
-    def run_record_with_prebuffer(self, size_buffer, start, stop):
+    def run_record_with_prebuffer(self, start, stop):
         """
         Run record video with pre-recording
         :param size_buffer: Duration pre-recording in second
@@ -372,7 +398,7 @@ class RecordRTSP:
         strt = start
         stp = stop
         try:
-            self._record_with_pre_buffer(size_buffer, strt, stp)
+            self._record_with_pre_buffer(self.record_buffer, strt, stp)
         except KeyboardInterrupt:
             pass
         except:

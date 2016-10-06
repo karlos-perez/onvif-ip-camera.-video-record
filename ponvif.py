@@ -12,14 +12,16 @@ from bs4 import BeautifulSoup
 
 
 class OnvifCam:
-    def __init__(self):
+    def __init__(self, config):
         self.stop = False
-
-    def setup(self, ipaddr, ipport, user, psw):
-        self.ip = ipaddr
-        self.port = ipport
-        self.username = user
-        self.password = psw
+        try:
+            self.ip = config['ip_adress']
+            self.port = int(config['onvif_port'])
+            self.username = config['user']
+            self.password = config['password']
+        except:
+            logging.error("Error Camera config")
+            raise Exception("Error config")
         self.capabilities = {}
         cap = self.get_capabilities()
         for k in cap.keys():
@@ -298,7 +300,7 @@ class OnvifCam:
         filename = '{}.jpg'.format(time.strftime("%Y%m%d-%H%M%S"))
         if path:
             abs_path = os.path.abspath(path)
-            if not os.path.exists(path):
+            if not os.path.exists(abs_path):
                 try:
                     os.mkdir(abs_path)
                 except:
