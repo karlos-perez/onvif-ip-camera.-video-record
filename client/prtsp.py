@@ -27,8 +27,8 @@ class RecordRTSP:
             self.record_buffer = 0
         else:
             self.record_buffer = int(buffer)
-        if config['dir_record']:
-            self.record_path = os.path.abspath(config['dir_record'])
+        if config.get('dir_record'):
+            self.record_path = os.path.abspath(config.get('dir_record'))
             if not os.path.exists(self.record_path):
                 try:
                     os.mkdir(self.record_path)
@@ -37,11 +37,6 @@ class RecordRTSP:
                     self.record_path = os.getcwd()
         else:
             self.record_path = os.getcwd()
-
-
-
-
-
         self.ip_cam_adress, port = self._get_ip_port(self.rtsp_url)
         self.ip_cam_port = int(port)
         if config.get('client_ports'):
