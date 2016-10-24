@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 
 import configparser
-import json
 import logging
 import sys
 import time
-
 from multiprocessing import Process, Event
 
-from prtsp import RecordRTSP
-from ponvif import OnvifCam
+from client.ponvif import OnvifCam
+from client.prtsp import RecordRTSP
 from pgoogledrive import GoogleDrive
-
 
 # Logging settings:
 ##  Main logging
