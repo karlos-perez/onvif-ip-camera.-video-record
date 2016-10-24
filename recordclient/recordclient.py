@@ -7,9 +7,9 @@ import sys
 import time
 from multiprocessing import Process, Event
 
-from client.pgoogledrive import GoogleDrive
-from client.ponvif import OnvifCam
-from client.prtsp import RecordRTSP
+from recordclient.pgoogledrive import GoogleDrive
+from recordclient.ponvif import OnvifCam
+from recordclient.prtsp import RecordRTSP
 
 
 def get_config():
@@ -37,7 +37,7 @@ def logs_setup(config):
         else:
             log_path = os.getcwd()
     if not config.get('log_file'):
-        log_filename = 'client.log'
+        log_filename = 'recordclient.log'
     else:
         log_filename = config.get('log_file')
     if not config.get('log_detect_file'):

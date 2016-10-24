@@ -60,11 +60,11 @@ class OnvifCam:
         headers = {'Content-Type': 'application/soap+xml; charset=utf-8'}
         # TODO: try: request except:
         response = requests.post(url, msg, headers=headers)
-        # TODO: change return {'error': False, 'response': BeautifulSoup(response.content, 'lxml')}
+        # TODO: change return {'error': False, 'response': BeautifulSoup(response.content, 'html.parser')}
         if response.status_code == 200:
-            return  BeautifulSoup(response.content, 'lxml')
+            return  BeautifulSoup(response.content, 'html.parser')
         elif response.status_code == 400:
-            resp = BeautifulSoup(response.content, 'lxml')
+            resp = BeautifulSoup(response.content, 'html.parser')
             print(resp.prettify())
             raise Exception(resp.find('soap-env:text').text)
         else:
