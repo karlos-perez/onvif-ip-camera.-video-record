@@ -27,4 +27,8 @@ setup(
         "oauth2client==3.0.0",
         "requests==2.10.0",
     ],
+    entry_points={
+        'console_scripts':
+            ['onvif-record = recordclient.recordclient']
+        }
 )

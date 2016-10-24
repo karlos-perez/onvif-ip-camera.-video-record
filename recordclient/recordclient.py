@@ -7,9 +7,9 @@ import sys
 import time
 from multiprocessing import Process, Event
 
-from recordclient.pgoogledrive import GoogleDrive
-from recordclient.ponvif import OnvifCam
-from recordclient.prtsp import RecordRTSP
+from pgoogledrive import GoogleDrive
+from ponvif import OnvifCam
+from prtsp import RecordRTSP
 
 
 def get_config():
@@ -67,6 +67,7 @@ def record_motion():
     cam=OnvifCam(config['Camera'])
     rtsp_url = cam.get_stream_uri()
     record_conf.update({'rtsp_url': rtsp_url})
+    cam.synchronization_date_time()
 
     drive = GoogleDrive(config['GoogleDrive'])
 
@@ -116,6 +117,7 @@ def record_online():
     record_conf = config['Record']
     cam=OnvifCam(config['Camera'])
     rtsp_url = cam.get_stream_uri()
+    cam.synchronization_date_time()
     record_conf.update({'rtsp_url': rtsp_url})
     rec = RecordRTSP(record_conf)
     stop_record = Event()
@@ -132,5 +134,19 @@ def record_online():
 
 
 if __name__ == "__main__":
-    # record_online()
-    record_motion()
+    print('Change record:\n  Online record: 1\n  Detect motion record: 2')
+    while True:
+        s = input('> ')
+        try:
+            count = int(s)
+            break
+        except ValueError:
+            print('Enter 1 or 2')
+    if count == 1:
+        print('Stop record: CTRL + C')
+        record_online()
+    elif count == 2:
+        print('Stop record: CTRL + C')
+        record_motion()
+    else:
+        print('Wrong input')
