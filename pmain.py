@@ -87,7 +87,27 @@ def record_motion():
         stop_record.set()
         proc.join()
 
+def record_online():
+    config = get_config()
+    record_conf = config['Record']
+    cam=OnvifCam(config['Camera'])
+    rtsp_url = cam.get_stream_uri()
+    record_conf.update({'rtsp_url': rtsp_url})
+    rec = RecordRTSP(record_conf)
+    stop_record = Event()
+    try:
+        proc = Process(target=rec.run_record_online, args=(stop_record,))
+        proc.daemon = True
+        proc.start()
+        while True:
+            pass
+    except KeyboardInterrupt:
+        stop_record.set()
+    finally:
+        proc.join()
+
+
 
 if __name__ == "__main__":
+    # record_online()
     record_motion()
-

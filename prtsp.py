@@ -381,6 +381,8 @@ class RecordRTSP:
             file_name = self._filename()
         try:
             self._record_online(file_name, stop_event, durations)
+        except KeyboardInterrupt:
+            pass
         except:
             logging.error("_record_online() - ERROR: {}".format(sys.exc_info()[0]))
         finally:
