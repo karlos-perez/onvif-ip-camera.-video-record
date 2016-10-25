@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 
+import base64
 import datetime
 import logging
 import os
 import requests
+import string
 import sys
 import time
 import uuid
 
 from bs4 import BeautifulSoup
+from hashlib import sha1
+from random import SystemRandom
 
 
 class OnvifCam:
@@ -42,6 +46,20 @@ class OnvifCam:
         self.profiletoken = self.profiles[0][self.profilename]
         self.profile_settings = self.get_profile_settings(self.profiletoken)
         self.snapshot_uri = self.get_snapshot_uri()
+
+    def onvif_auth_header(self):
+        created = datetime.datetime.now().isoformat().split(".")[0]
+        n64 = ''.join(SystemRandom().choice(string.ascii_letters + string.digits+string.punctuation) for _ in range(22))
+        nc = base64.b64encode(n64.encode())
+        conc = n64 + created + self.password
+        pdigest= base64.b64encode(sha1(conc.encode()).digest())
+        username = '<Username>{}</Username>'.format(self.username)
+        password= '<Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">{}</Password>'.format(pdigest.decode())
+        nonce = '<Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">{}</Nonce>'.format(nc.decode())
+        created = '<Created xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">{}</Created>'.format(created)
+        usertoken= '<UsernameToken>{}{}{}{}</UsernameToken>'.format(username, password, nonce, created)
+        header = '<s:Header><Security s:mustUnderstand="1" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">{}</Security></s:Header>'.format(usertoken)
+        return header
 
     def _create_soap_msg(self, msg, header=''):
         envelope = '<?xml version="1.0" encoding="UTF-8"?>' \
@@ -358,8 +376,7 @@ class OnvifCam:
                '{p}</Rule>'.format(n=rule_name, t=rule_type, p=parameters)
         msg = '<ModifyRules xmlns="http://www.onvif.org/ver20/analytics/wsdl">' \
               '{p}{r}</ModifyRules>'.format(p=profiletoken, r=rule)
-        # print(msg)
-        resp = self._send_request(url, self._create_soap_msg(msg))
+        resp = self._send_request(url, self._create_soap_msg(msg, header=self.onvif_auth_header()))
         return resp.prettify()
 
     def get_analytics_modules(self):
