@@ -24,10 +24,10 @@ class GoogleDrive:
         self.application_name = config.get('application_name')
         self.client_secret_file = config.get('client_secret_file')
         self.folder_id = config.get('folder_id')
-        self.service = self._google_drive_servise()
+        self.service = self._google_drive_service()
         self.current_folder = datetime.now().strftime('%Y%m%d')
 
-    def _google_drive_servise(self):
+    def _google_drive_service(self):
         """
         Gets valid user credentials from storage.
 
@@ -38,7 +38,7 @@ class GoogleDrive:
             Google Drive service object
         """
         scopes ='https://www.googleapis.com/auth/drive'
-        app_dir = os.getcwd()
+        app_dir = os.path.dirname(__file__)
         credential_dir = os.path.join(app_dir, 'credentials')
         credential_path = os.path.join(credential_dir, 'drive-config-app.json')
         client_secret_path = os.path.join(credential_dir, self.client_secret_file)

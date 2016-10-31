@@ -33,9 +33,7 @@ def logs_setup(config):
                 os.mkdir(log_path)
             except:
                 logging.error("Fail make dir: ", log_path)
-                log_path = os.getcwd()
-        else:
-            log_path = os.getcwd()
+                log_path = os.path.dirname(__file__)
     if not config.get('log_file'):
         log_filename = 'recordclient.log'
     else:
@@ -132,9 +130,31 @@ def record_online():
     finally:
         proc.join()
 
+def upload_snapshots(clean_snapshot=True):
+    config = get_config()
+    log_motion = logs_setup(config['Log'])
+    drive = GoogleDrive(config['GoogleDrive'])
+    cam=OnvifCam(config['Camera'])
+    cam.synchronization_date_time()
+    try:
+        for i in cam.run_detect_motion():
+            if i:
+                log_motion.info('Motion True')
+                snapshot = cam.save_snapshot(config['Record']['dir_snapshots'])
+                drive.upload(snapshot)
+                if clean_snapshot:
+                    os.remove(snapshot)
+    except KeyboardInterrupt:
+        pass
+    except:
+        logging.error("{}: {}".format((__name__), sys.exc_info()[0]))
+
 
 if __name__ == "__main__":
-    print('Change record:\n  Online record: 1\n  Detect motion record: 2')
+    print('Change record:\n'
+          '  Online record: 1\n'
+          '  Detect motion record: 2\n'
+          '  Save snapshots on google drive: 3')
     while True:
         s = input('> ')
         try:
@@ -148,5 +168,8 @@ if __name__ == "__main__":
     elif count == 2:
         print('Stop record: CTRL + C')
         record_motion()
+    elif count == 3:
+        print('Stop record: CTRL + C')
+        upload_snapshots()
     else:
         print('Wrong input')

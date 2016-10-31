@@ -306,13 +306,24 @@ class OnvifCam:
         snapshot_url = resp.find('tt:uri').text
         return snapshot_url
 
-    def get_snapshot(self, uri):
+    def get_snapshot(self, uri=''):
+        if uri:
+            url = uri
+        else:
+            url = self.snapshot_uri
         try:
-            response = requests.get(uri)
+            attempts = 2
+            while attempts > 0:
+                response = requests.get(url)
+                if response.status_code == 200:
+                    break
         except requests.ConnectionError():
-            logging.error("Connection error: ", uri)
+            logging.error("Connection error: ", url)
             return None
-        return response
+        if not response or response.status_code != 200:
+            logging.error("Get snapshot request.status_code: ", response.status_code)
+            return None
+        return response.content
 
     def save_snapshot(self, path=''):
         filename = '{}.jpg'.format(time.strftime("%Y%m%d-%H%M%S"))
@@ -323,22 +334,15 @@ class OnvifCam:
                     os.mkdir(abs_path)
                 except:
                     logging.error("Fail make dir: ", abs_path)
-                    abs_path = os.getcwd()
+                    abs_path = os.path.dirname(__file__)
         else:
-            abs_path = os.getcwd()
+            abs_path = os.path.dirname(__file__)
         file = os.path.join(abs_path, filename)
         response = self.get_snapshot(self.snapshot_uri)
         if not response:
             return None
-        elif response.status_code != 200:
-            logging.error("Get snapshot request.status_code: ", response.status_code)
-            self.snapshot_uri = self.get_snapshot_uri()
-            response = self.get_snapshot(self.snapshot_uri)
-            if not response or response.status_code != 200:
-                logging.error("Get snapshot again request.status_code: ", response.status_code)
-                return None
         with open(file, 'wb') as fl:
-            fl.write(response.content)
+            fl.write(response)
         return file
 
     def get_rules(self, token):
