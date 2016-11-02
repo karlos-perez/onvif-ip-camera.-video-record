@@ -374,14 +374,19 @@ class RecordRTSP:
             file_name = filename
         else:
             file_name = self._filename()
-        try:
-            self._record_online(file_name, stop_event, durations)
-        except KeyboardInterrupt:
-            pass
-        except:
-            logging.error("_record_online() - ERROR: {}".format(sys.exc_info()[0]))
-        finally:
-            self._finish()
+        while True:
+            try:
+                self._record_online(file_name, stop_event, durations)
+            except socket.timeout as time_error:
+                logging.error("_record_with_pre_buffer() - Exception socket: {}".format(time_error))
+                continue
+            except KeyboardInterrupt:
+                pass
+            except:
+                logging.error("_record_online() - ERROR: {}".format(sys.exc_info()[0]))
+                break
+            finally:
+                self._finish()
 
     def run_record_with_prebuffer(self, start, stop):
         """
@@ -391,14 +396,19 @@ class RecordRTSP:
         :param stop: multiprocessing.Event() - stop online record
         :return:
         """
-        self._start()
-        strt = start
-        stp = stop
-        try:
-            self._record_with_pre_buffer(self.record_buffer, strt, stp)
-        except KeyboardInterrupt:
-            pass
-        except:
-            logging.error("_record_with_pre_buffer() - Exception: {}".format(sys.exc_info()[0]))
-        finally:
-            self._finish()
+        while True:
+            self._start()
+            strt = start
+            stp = stop
+            try:
+                self._record_with_pre_buffer(self.record_buffer, strt, stp)
+            except socket.timeout as time_error:
+                logging.error("_record_with_pre_buffer() - Exception socket: {}".format(time_error))
+                continue
+            except KeyboardInterrupt:
+                break
+            except:
+                logging.error("_record_with_pre_buffer() - Exception: {}".format(sys.exc_info()[0]))
+                break
+            finally:
+                self._finish()
