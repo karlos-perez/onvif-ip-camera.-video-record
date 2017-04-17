@@ -1,4 +1,4 @@
-.. image:: http://www.onvif.org/Portals/_default/Skins/onvif/images/logo-new.jpg
+.. image:: https://www.onvif.org/wp-content/themes/onvif-public/images/logo.png
        :scale: 20 %
 
 
